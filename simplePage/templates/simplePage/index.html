@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Worth your Weight in Gold</title>
+		<meta name="description" content="Find your weight in gold!">
+	</head>
+	<body onload="getPrice()">
+		<h2>Enter your weight to find your worth in gold!</h2>
+		<form>
+			Weight:
+			<input type="text" name="value" id="weightValue">
+			<select id="unit">
+				<option value="lbs">pounds</option>
+				<option value="kg">kilograms</option>
+			</select>
+			<br><br>
+			<input type="button" onclick="calculate()" value="Calculate">
+		</form>
+		<p id="p"></p>
+		<script>
+			var apiKey = 'H13tJmuGdNix7jimSnMQ';
+
+			var start = "{{ past_date.year }}" + "-" + "{{ past_date.month }}" + "-" + "{{ past_date.day }}";
+			var end = "{{ current_date.year }}" + "-" + "{{ current_date.month }}" + "-" + "{{ current_date.day }}";
+
+			var goldRUrl = "https://www.quandl.com/api/v3/datasets/LBMA/GOLD.json?api_key=" + apiKey + "&column_index=2&start_date=" + start + "&end_date=" + end;
+
+			var priceData;
+			var price;
+
+			var getPrice = function()
+			{
+				var xhr = new XMLHttpRequest();
+				xhr.open('GET', goldRUrl);
+				xhr.responseType = 'json';
+				
+				xhr.onload = function()
+				{
+					priceData = xhr.response;
+					price = priceData.dataset.data[0][1];
+				}
+
+				xhr.send();
+			}
+	
+			var convertData;
+			var convert;
+
+			var worth;
+
+			var calculate = function()
+			{
+				var weightElement = document.getElementById("weightValue");
+				var weight = weightElement.value;
+
+				var unitElement = document.getElementById("unit");
+				var unit = unitElement.value;
+
+				var unitconvURL = "http://127.0.0.1:8000/webAPI/?from=" + unit + "&to=t_oz&value=" + weight;
+
+				var pElement = document.getElementById("p");
+				pElement.textContent = "";
+
+				if (isNaN(weight))
+				{
+					alert("Please enter a number");
+				}
+				else
+				{
+					var xhr = new XMLHttpRequest();
+					xhr.open('GET', unitconvURL);
+					xhr.responseType = 'json';
+
+					xhr.onload = function()
+					{
+						convertData = xhr.response;
+
+						if("error" in convertData)
+						{
+							alert(convertData.error);
+						}
+						else
+						{
+							convert = convertData.value;
+							worth = price * convert;
+							pElement.textContent = "You are worth " + formatter.format(worth) + "!";
+						}
+					}
+
+					xhr.send();
+				}
+			}
+
+			var formatter = new Intl.NumberFormat('en-US',
+			{
+				style: 'currency',
+				currency: 'USD',
+				minimumFractionDigits: 2,
+			});
+		</script>
+	</body>
+</html>
